@@ -33,7 +33,7 @@ public class NoteAPI {
         return instance;
     }
 
-    // TODO: - getNote (maybe getNoteAsync)
+    // getNote (maybe getNoteAsync)
     @WorkerThread
     public Note getNote(String title) {
         // URLs cannot contain spaces, so we replace them with %20.
@@ -54,7 +54,7 @@ public class NoteAPI {
         }
     }
 
-    // TODO: - putNote (don't need putNotAsync, probably)
+    // putNote (don't need putNotAsync, probably)
     @WorkerThread
     public String putNote(String title, String note) {
         // URLs cannot contain spaces, so we replace them with %20.
@@ -67,7 +67,6 @@ public class NoteAPI {
 
         try (var response = client.newCall(request).execute()) {
             assert response.body() != null;
-           // var body = RequestBody.create(json, JSON);
             return newNote.toJSON();
         } catch (Exception e) {
             e.printStackTrace();
