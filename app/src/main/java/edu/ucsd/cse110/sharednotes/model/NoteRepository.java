@@ -12,6 +12,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Request;
+
 public class NoteRepository {
     private final NoteDao dao;
 
@@ -132,11 +134,20 @@ public class NoteRepository {
         // it's supposed to upload data onto database
         // created a new json object, fill it with information, turn json into note, and put that note onto server
 
-        // var noteTitle = note.title.toJSON();
-
-        // var toUpload = putNote(note.title, note.content);
-
+        // URLs cannot contain spaces, so we replace them with %20.
+        String noteMsg = note.title.replace(" ", "%20");
         Note newNote = new Note(note.title,note.content);
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
+                .method("PUT", null)
+                .build();
         newNote.toJSON();
+        /*
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } */
     }
 }
