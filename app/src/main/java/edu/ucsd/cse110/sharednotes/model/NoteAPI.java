@@ -56,10 +56,10 @@ public class NoteAPI {
 
     // putNote (don't need putNotAsync, probably)
     @WorkerThread
-    public String putNote(String title, String note) {
+    public String putNote(String title, String content) {
         // URLs cannot contain spaces, so we replace them with %20.
         String noteMsg = title.replace(" ", "%20");
-        Note newNote = new Note(title,note );
+        Note newNote = new Note(title,content);
         var request = new Request.Builder()
                 .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
                 .method("PUT", null)
