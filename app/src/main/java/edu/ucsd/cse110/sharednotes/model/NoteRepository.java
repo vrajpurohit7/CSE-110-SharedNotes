@@ -138,7 +138,5 @@ public class NoteRepository {
 
         Note newNote = new Note(note.title,note.content);
         newNote.toJSON();
-
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
