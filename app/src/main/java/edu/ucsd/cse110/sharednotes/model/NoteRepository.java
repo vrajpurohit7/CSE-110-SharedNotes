@@ -136,18 +136,11 @@ public class NoteRepository {
 
         // URLs cannot contain spaces, so we replace them with %20.
         String noteMsg = note.title.replace(" ", "%20");
-        Note newNote = new Note(note.title,note.content);
+        Note newNote = new Note(note.title,note.content,note.version);
         var request = new Request.Builder()
                 .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
                 .method("PUT", null)
                 .build();
         newNote.toJSON();
-        /*
-        try (var response = client.newCall(request).execute()) {
-            assert response.body() != null;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } */
     }
 }
