@@ -11,8 +11,10 @@ import com.google.gson.Gson;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class NoteAPI {
     // Read the docs: https://square.github.io/okhttp/
@@ -20,7 +22,7 @@ public class NoteAPI {
 
     private volatile static NoteAPI instance = null;
 
-    private OkHttpClient client;
+    private final OkHttpClient client;
 
     public NoteAPI() {
         this.client = new OkHttpClient();
@@ -47,34 +49,53 @@ public class NoteAPI {
         try (var response = client.newCall(request).execute()) {
             assert response.body() != null;
             var body = response.body().string();
+            Log.i("GET", body);
             return Note.fromJSON(body);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
+    @AnyThread
+    public Future<Note> getAsync(String title) {
+        var executor = Executors.newSingleThreadExecutor();
+        var future = executor.submit(() -> getNote(title));
+
+        // We can use future.get(1, SECONDS) to wait for the result.
+        return future;
+    }
 
     // putNote (don't need putNotAsync, probably)
     @WorkerThread
-    public String putNote(String title, String content) {
+    public void putNote(Note note) {
+        MediaType JSON = MediaType.parse("aplication/json; charset=utf-8");
+        String JSONToSave = note.toJSON();
+        RequestBody body = RequestBody.create(JSONToSave, JSON);
+
         // URLs cannot contain spaces, so we replace them with %20.
-        String noteMsg = title.replace(" ", "%20");
-        Note newNote = new Note(title,content);
+        String noteMsg = note.title.replace(" ", "%20");
         var request = new Request.Builder()
                 .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
-                .method("PUT", null)
+                .method("PUT", body)
                 .build();
 
         try (var response = client.newCall(request).execute()) {
             assert response.body() != null;
-            return newNote.toJSON();
+            Log.i("SAVE", response.body().string());
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
     }
+    @AnyThread
+//    public Future<Note> putAsync(Note msg) {
+//        var executor = Executors.newSingleThreadExecutor();
+//        var future = executor.submit(() -> putNote(msg));
+//
+//        // We can use future.get(1, SECONDS) to wait for the result.
+//        return future;
+//    }
 
-    /**
+    /*
      * An example of sending a GET request to the server.
      *
      * The /echo/{msg} endpoint always just returns {"message": msg}.

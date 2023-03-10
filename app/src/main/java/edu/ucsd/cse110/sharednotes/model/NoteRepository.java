@@ -1,5 +1,7 @@
 package edu.ucsd.cse110.sharednotes.model;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -12,7 +14,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class NoteRepository {
     private final NoteDao dao;
@@ -26,6 +31,13 @@ public class NoteRepository {
     public NoteRepository(NoteDao dao, NoteAPI api) {
         this.dao = dao;
         this.api = api;
+    }
+
+
+    private OkHttpClient client;
+
+    public void NoteAPI() {
+        this.client = new OkHttpClient();
     }
 
     // Synced Methods
@@ -115,6 +127,8 @@ public class NoteRepository {
         * Save into a member variable the ScheduledFuture returned by executor.schedule(...) each time getRemote is called.
         * When it's called again, call cancel() on the future. (Reuse the executor, don't create a new one each call).
         */
+        Note newNote = null;
+        newNote = api.getNote(title);
         realNoteData = new MutableLiveData<>();
         var executor = Executors.newSingleThreadScheduledExecutor();
          poller = executor.scheduleAtFixedRate(() -> {
@@ -134,13 +148,22 @@ public class NoteRepository {
         // it's supposed to upload data onto database
         // created a new json object, fill it with information, turn json into note, and put that note onto server
 
+        MediaType JSON = MediaType.parse("aplication/json; charset=utf-8");
+        String JSONToSave = note.toJSON();
+        RequestBody body = RequestBody.create(JSONToSave, JSON);
+
         // URLs cannot contain spaces, so we replace them with %20.
         String noteMsg = note.title.replace(" ", "%20");
-        Note newNote = new Note(note.title,note.content,note.version);
         var request = new Request.Builder()
                 .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
-                .method("PUT", null)
+                .method("PUT", body)
                 .build();
-        newNote.toJSON();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            Log.i("SAVE", response.body().string());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
