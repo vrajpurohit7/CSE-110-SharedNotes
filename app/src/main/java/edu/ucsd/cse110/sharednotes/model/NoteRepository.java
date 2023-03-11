@@ -1,5 +1,6 @@
 package edu.ucsd.cse110.sharednotes.model;
 
+import android.util.JsonReader;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -7,9 +8,12 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
+import com.google.gson.JsonObject;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -25,8 +29,11 @@ public class NoteRepository {
     private final NoteAPI api;
     private ScheduledFuture<?> poller; // what could this be for... hmm?
 
+    private Future<?> noteFuture;
     // LiveData variable which contains the latest real time value.
     private MutableLiveData<Note> realNoteData;
+
+    private static final MediaType JSON = MediaType.parse("aplication/json; charset=utf-8");
 
     public NoteRepository(NoteDao dao, NoteAPI api) {
         this.dao = dao;
@@ -131,7 +138,7 @@ public class NoteRepository {
         newNote = api.getNote(title);
         realNoteData = new MutableLiveData<>();
         var executor = Executors.newSingleThreadScheduledExecutor();
-         poller = executor.scheduleAtFixedRate(() -> {
+         noteFuture = executor.scheduleAtFixedRate(() -> {
              var note = api.getNote(title);
              realNoteData.postValue(note);
         }, 0, 3000, TimeUnit.MILLISECONDS);
@@ -144,26 +151,35 @@ public class NoteRepository {
     }
 
     public void upsertRemote(Note note) {
-        // TODO: Implement upsertRemote!
+        // Implement upsertRemote!
         // it's supposed to upload data onto database
         // created a new json object, fill it with information, turn json into note, and put that note onto server
 
-        MediaType JSON = MediaType.parse("aplication/json; charset=utf-8");
-        String JSONToSave = note.toJSON();
-        RequestBody body = RequestBody.create(JSONToSave, JSON);
+        var executor = Executors.newSingleThreadExecutor();
+        noteFuture = executor.submit(() -> {
+            JsonObject JSon = new JsonObject();
+            JSon.addProperty("content", note.content);
+            JSon.addProperty("version", note.version + 1);
 
-        // URLs cannot contain spaces, so we replace them with %20.
-        String noteMsg = note.title.replace(" ", "%20");
-        var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
-                .method("PUT", body)
-                .build();
+            api.putNote(note);
+        });
 
-        try (var response = client.newCall(request).execute()) {
-            assert response.body() != null;
-            Log.i("SAVE", response.body().string());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+//        String JSONToSave = note.toJSON();
+//        RequestBody body = RequestBody.create(JSONToSave, JSON);
+//
+//        // URLs cannot contain spaces, so we replace them with %20.
+//        String noteMsg = note.title.replace(" ", "%20");
+//        var request = new Request.Builder()
+//                .url("https://sharednotes.goto.ucsd.edu/notes/" + noteMsg)
+//                .method("PUT", body)
+//                .build();
+//
+//        try (var response = client.newCall(request).execute()) {
+//            assert response.body() != null;
+//            Log.i("SAVE", response.body().string());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 }

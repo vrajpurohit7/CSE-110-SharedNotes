@@ -68,7 +68,7 @@ public class NoteAPI {
     // putNote (don't need putNotAsync, probably)
     @WorkerThread
     public void putNote(Note note) {
-        MediaType JSON = MediaType.parse("aplication/json; charset=utf-8");
+        MediaType JSON = MediaType.parse("application/json");
         String JSONToSave = note.toJSON();
         RequestBody body = RequestBody.create(JSONToSave, JSON);
 
@@ -87,13 +87,13 @@ public class NoteAPI {
         }
     }
     @AnyThread
-//    public Future<Note> putAsync(Note msg) {
-//        var executor = Executors.newSingleThreadExecutor();
-//        var future = executor.submit(() -> putNote(msg));
-//
-//        // We can use future.get(1, SECONDS) to wait for the result.
-//        return future;
-//    }
+    public void putAsync(Note msg) {
+        var executor = Executors.newSingleThreadExecutor();
+        var future = executor.submit(() -> putNote(msg));
+
+        // We can use future.get(1, SECONDS) to wait for the result.
+        //return future;
+    }
 
     /*
      * An example of sending a GET request to the server.
